@@ -1,5 +1,6 @@
 "use client";
 
+import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -7,21 +8,22 @@ import {
   type TUpdateUsersSchema,
 } from "@/lib/schemas/schema.users";
 import "@/lib/schemas/_schema.client.init";
-import { useState } from "react";
+import Image from "next/image";
 
 const FormTestComp = ({ className }: { className?: string }) => {
   const {
     register,
     handleSubmit,
+    watch,
+    setError,
     formState: { errors, isSubmitting },
-  } = useForm({
+  } = useForm<TUpdateUsersSchema>({
     resolver: zodResolver(createWithoutDefaults),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
   });
-  const onSubmit = (data: TUpdateUsersSchema) => {
-    console.log("done");
-  };
+  const file = watch("file")?.[0];
+  const onSubmit = async (data: TUpdateUsersSchema) => {};
   return (
     <div className={`${className} w-full`}>
       <form
@@ -36,7 +38,30 @@ const FormTestComp = ({ className }: { className?: string }) => {
         {errors.email && (
           <span className={"text-red-600"}>{errors.email.message}</span>
         )}
-        <input type="file" />
+        <label
+          htmlFor={"file"}
+          className={"bg-yellow-50 text-center py-2 rounded-2xl cursor-pointer"}
+        >
+          انتخاب فایل
+        </label>
+        {file && <span>{file.name}</span>}
+        {file && (
+          <Image
+            alt={"selected-file"}
+            src={URL.createObjectURL(file)}
+            width={100}
+            height={100}
+          />
+        )}
+        {errors.file && (
+          <span className={"text-red-600"}>{errors.file.message}</span>
+        )}
+        <input
+          type="file"
+          id={"file"}
+          {...register("file")}
+          className={"hidden"}
+        />
         <button>{isSubmitting ? "در حال ارسال" : "ارسال"}</button>
       </form>
       {errors.form && (

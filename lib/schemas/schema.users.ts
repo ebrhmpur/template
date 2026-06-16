@@ -14,19 +14,6 @@ const sanitizeString = (v: string) =>
     .trim()
     .replace(/\s+/g, " ");
 
-//- super refinement (for adding custom errors to each schema)
-const createWithoutDefaultsSP = (v: z.ZodObject) =>
-  v.superRefine((data, ctx) => {
-    // add multi-related-field errors
-    if (data.name == data.email) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["form"],
-        message: "نام کاربری و ایمیل دقیقا مشابه یکدیگر هستند",
-      });
-    }
-  });
-
 // define main schemas
 //- insert schema
 const userSchema = createInsertSchema(users, {
@@ -36,9 +23,26 @@ const userSchema = createInsertSchema(users, {
 }).strict();
 
 // define picked schemas
-export const createWithoutDefaults = createWithoutDefaultsSP(
-  userSchema.pick({ name: true, email: true }),
-);
+export const createWithoutDefaults = userSchema
+  .pick({ name: true, email: true })
+  .extend({ file: z.custom<FileList>().optional() })
+  .superRefine((data, ctx) => {
+    // add multi-related-field errors
+    if (data.name == data.email) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["form"],
+        message: "نام کاربری و ایمیل دقیقا مشابه یکدیگر هستند",
+      });
+    }
+    if (!data.file || data.file.length < 1) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["file"],
+        message: "انتخاب فایل الزامیست",
+      });
+    }
+  });
 
 // export schema type
 export type TUpdateUsersSchema = z.output<typeof createWithoutDefaults>;

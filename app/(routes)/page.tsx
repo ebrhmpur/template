@@ -38,9 +38,16 @@
 // };
 
 import UiContainerComp from "@/components/_UI/ui-container-comp";
-import FormTestComp from "@/components/form-test-comp";
 import { validateSchema } from "@/lib/schemas/_schema.validate";
 import { createWithoutDefaults } from "@/lib/schemas/schema.users";
+import dynamic from "next/dynamic";
+
+const FormTestComp = dynamic(
+  () => {
+    return import("@/components/form-test-comp");
+  },
+  { ssr: !true },
+);
 
 const Page = ({
   params,
