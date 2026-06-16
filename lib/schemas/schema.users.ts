@@ -1,0 +1,44 @@
+import { z } from "zod";
+import { createInsertSchema } from "drizzle-zod";
+import { users } from "@/lib/DB/_DB.schemas";
+
+// global callbacks
+//- sanitize string
+const sanitizeString = (v: string) =>
+  v
+    .normalize("NFKC")
+    .replace(/[\u0000-\u001F\u007F]/g, "")
+    .replace(/[\u202A-\u202E\u2066-\u2069]/g, "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[\u0080-\u009F]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+
+//- super refinement (for adding custom errors to each schema)
+const createWithoutDefaultsSP = (v: z.ZodObject) =>
+  v.superRefine((data, ctx) => {
+    // add multi-related-field errors
+    if (data.name == data.email) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["form"],
+        message: "نام کاربری و ایمیل دقیقا مشابه یکدیگر هستند",
+      });
+    }
+  });
+
+// define main schemas
+//- insert schema
+const userSchema = createInsertSchema(users, {
+  name: (s) =>
+    s.min(3).max(20).transform(sanitizeString).pipe(z.string().min(3)),
+  email: (s) => s.transform(sanitizeString).pipe(z.email().min(3).max(100)),
+}).strict();
+
+// define picked schemas
+export const createWithoutDefaults = createWithoutDefaultsSP(
+  userSchema.pick({ name: true, email: true }),
+);
+
+// export schema type
+export type TUpdateUsersSchema = z.output<typeof createWithoutDefaults>;

@@ -1,0 +1,40 @@
+{
+  "name": "template",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx lib/DB/_DB.migrate.ts",
+    "db:drop": "drizzle-kit drop"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "latest",
+    "bcrypt": "latest",
+    "dotenv": "latest",
+    "drizzle-orm": "latest",
+    "drizzle-zod": "latest",
+    "next": "latest",
+    "postgres": "latest",
+    "prettier": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-hook-form": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "latest",
+    "@types/bcrypt": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "drizzle-kit": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "tailwindcss": "latest",
+    "typescript": "latest"
+  }
+}

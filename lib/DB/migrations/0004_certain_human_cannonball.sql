@@ -1,0 +1,1 @@
+DROP TABLE "user_to_colors_doc" CASCADE;
