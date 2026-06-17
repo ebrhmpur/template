@@ -9,9 +9,6 @@ export const errorMap: z.ZodErrorMap = (issue) => {
   const fieldKey =
     fieldTranslations[String(issue.path?.[0])] ?? ("این فیلد" as string);
 
-  if (issue.input == "") {
-    return `${fieldKey} الزامیست`;
-  }
   if (issue.code == "unrecognized_keys") {
     return `${fieldKey} غیر قابل شناسایی است`;
   }

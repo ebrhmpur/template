@@ -1,4 +1,4 @@
-import { db } from "@/lib/DB/_DB.connection";
+import { db } from "@/lib/DB/_DB.init";
 import { users } from "@/lib/DB/_DB.schemas";
 import { createController } from "@/lib/controller";
 import { TCtr } from "@/lib/controller";

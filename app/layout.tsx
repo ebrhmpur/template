@@ -4,6 +4,7 @@ import { z } from "zod";
 import { errorMap } from "@/lib/schemas/_schema.errorMap";
 import localFont from "next/font/local";
 import type { Metadata } from "next";
+import ZodCustomErrorMapComp from "@/components/_Wrappers/zod-custom-errorMap-comp";
 
 z.config({
   customError: errorMap,
@@ -50,7 +51,9 @@ export default function RootLayout({
   return (
     <html lang="en" dir={`rtl`}>
       <body className={`/*font_name.className*/ font-font_name antialiased`}>
+        <ZodCustomErrorMapComp>
         <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        </ZodCustomErrorMapComp>
       </body>
     </html>
   );

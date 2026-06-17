@@ -27,7 +27,7 @@ export const createWithoutDefaults = userSchema
   .pick({ name: true, email: true })
   .extend({ file: z.custom<FileList>().optional() })
   .superRefine((data, ctx) => {
-    // add multi-related-field errors
+    // add multi-related-field / custom validation errors
     if (data.name == data.email) {
       ctx.addIssue({
         code: "custom",
@@ -35,11 +35,20 @@ export const createWithoutDefaults = userSchema
         message: "نام کاربری و ایمیل دقیقا مشابه یکدیگر هستند",
       });
     }
+
     if (!data.file || data.file.length < 1) {
       ctx.addIssue({
         code: "custom",
         path: ["file"],
         message: "انتخاب فایل الزامیست",
+      });
+    }
+
+    if (data.file && !data.file[0].type.startsWith("image")) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["file"],
+        message: "تنها فایل عکس قابل بارگزاریست",
       });
     }
   });

@@ -1,14 +1,14 @@
 const UiFormErrorComp = ({
-  className,
   message,
+  className,
 }: {
-  className?: string;
   message: string;
+  className?: string;
 }) => {
   return (
-    <div className={`${className} bg-red-300 flex gap-3 p-3 rounded-lg`}>
+    <div className={`${className} bg-red-200 flex gap-3 p-3 rounded-lg`}>
       <span>C</span>
-      <span className={"text-red-500"}>{message}</span>
+      <span className={"text-red-700"}>{message}</span>
     </div>
   );
 };

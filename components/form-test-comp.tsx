@@ -1,13 +1,12 @@
 "use client";
 
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createWithoutDefaults,
   type TUpdateUsersSchema,
 } from "@/lib/schemas/schema.users";
-import "@/lib/schemas/_schema.client.init";
+import UiFormErrorComp from "@/components/_UI/ui-form-error-comp";
 import Image from "next/image";
 
 const FormTestComp = ({ className }: { className?: string }) => {
@@ -18,9 +17,10 @@ const FormTestComp = ({ className }: { className?: string }) => {
     setError,
     formState: { errors, isSubmitting },
   } = useForm<TUpdateUsersSchema>({
-    resolver: zodResolver(createWithoutDefaults),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
+    resolver: zodResolver(createWithoutDefaults),
+    defaultValues: {},
   });
   const file = watch("file")?.[0];
   const onSubmit = async (data: TUpdateUsersSchema) => {};
@@ -31,13 +31,9 @@ const FormTestComp = ({ className }: { className?: string }) => {
         className={"flex flex-col gap-10"}
       >
         <input {...register("name")} placeholder={"نام"} />
-        {errors.name && (
-          <span className={"text-red-600"}>{errors.name.message}</span>
-        )}
+        {errors.name && <UiFormErrorComp message={errors.name.message!} />}
         <input {...register("email")} placeholder={"ایمیل"} />
-        {errors.email && (
-          <span className={"text-red-600"}>{errors.email.message}</span>
-        )}
+        {errors.email && <UiFormErrorComp message={errors.email.message!} />}
         <label
           htmlFor={"file"}
           className={"bg-yellow-50 text-center py-2 rounded-2xl cursor-pointer"}
@@ -53,9 +49,7 @@ const FormTestComp = ({ className }: { className?: string }) => {
             height={100}
           />
         )}
-        {errors.file && (
-          <span className={"text-red-600"}>{errors.file.message}</span>
-        )}
+        {errors.file && <UiFormErrorComp message={errors.file.message!} />}
         <input
           type="file"
           id={"file"}
@@ -64,11 +58,7 @@ const FormTestComp = ({ className }: { className?: string }) => {
         />
         <button>{isSubmitting ? "در حال ارسال" : "ارسال"}</button>
       </form>
-      {errors.form && (
-        <span className={"text-2xl bg-red-300 rounded-2xl"}>
-          {errors.form.message}
-        </span>
-      )}
+      {errors.form && <UiFormErrorComp message={errors.form.message!} />}
     </div>
   );
 };
