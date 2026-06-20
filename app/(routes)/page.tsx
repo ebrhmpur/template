@@ -56,7 +56,6 @@ const Page = ({
   params: Promise<Record<string, string>>;
   searchParams: Promise<Record<string, string>>;
 }) => {
-  console.log("must be server");
   const result = validateSchema(createWithoutDefaults, { name: "", email: "" });
   return (
     <main>

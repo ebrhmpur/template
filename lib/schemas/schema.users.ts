@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createInsertSchema } from "drizzle-zod";
 import { users } from "@/lib/DB/_DB.schemas";
+import { $RefinementCtx } from "zod/v4/core";
 
 // global callbacks
 //- sanitize string
@@ -14,6 +15,27 @@ const sanitizeString = (v: string) =>
     .trim()
     .replace(/\s+/g, " ");
 
+//- file validations
+const validatePicture = (v: File, ctx: $RefinementCtx) => {
+  // محل verify کردن کامل فایل
+  if (!v) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["file"],
+      message: "انتخاب فایل الزامیست",
+    });
+  }
+
+  console.log(v);
+  // if (v && !v[0].type.startsWith("image")) {
+  //   ctx.addIssue({
+  //     code: "custom",
+  //     path: ["file"],
+  //     message: "تنها فایل عکس قابل بارگزاریست",
+  //   });
+  // }
+};
+
 // define main schemas
 //- insert schema
 const userSchema = createInsertSchema(users, {
@@ -25,7 +47,7 @@ const userSchema = createInsertSchema(users, {
 // define picked schemas
 export const createWithoutDefaults = userSchema
   .pick({ name: true, email: true })
-  .extend({ file: z.custom<FileList>().optional() })
+  .extend({ file: z.custom<File>().optional() })
   .superRefine((data, ctx) => {
     // add multi-related-field / custom validation errors
     if (data.name == data.email) {
@@ -35,21 +57,8 @@ export const createWithoutDefaults = userSchema
         message: "نام کاربری و ایمیل دقیقا مشابه یکدیگر هستند",
       });
     }
-
-    if (!data.file || data.file.length < 1) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["file"],
-        message: "انتخاب فایل الزامیست",
-      });
-    }
-
-    if (data.file && !data.file[0].type.startsWith("image")) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["file"],
-        message: "تنها فایل عکس قابل بارگزاریست",
-      });
+    if (data.file) {
+      validatePicture(data.file, ctx);
     }
   });
 
