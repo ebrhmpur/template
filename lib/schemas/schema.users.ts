@@ -16,15 +16,8 @@ const sanitizeString = (v: string) =>
     .replace(/\s+/g, " ");
 
 //- file validations
-const validatePicture = (v: File, ctx: $RefinementCtx) => {
+const validatePicture = (v: File[], ctx: $RefinementCtx) => {
   // محل verify کردن کامل فایل
-  if (!v) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["file"],
-      message: "انتخاب فایل الزامیست",
-    });
-  }
 
   console.log(v);
   // if (v && !v[0].type.startsWith("image")) {
@@ -47,7 +40,7 @@ const userSchema = createInsertSchema(users, {
 // define picked schemas
 export const createWithoutDefaults = userSchema
   .pick({ name: true, email: true })
-  .extend({ file: z.custom<File>().optional() })
+  .extend({ file: z.array(z.instanceof(File)).optional() })
   .superRefine((data, ctx) => {
     // add multi-related-field / custom validation errors
     if (data.name == data.email) {
@@ -57,9 +50,21 @@ export const createWithoutDefaults = userSchema
         message: "نام کاربری و ایمیل دقیقا مشابه یکدیگر هستند",
       });
     }
-    if (data.file) {
-      validatePicture(data.file, ctx);
+    if (!data.file || data.file.length < 1) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["file"],
+        message: "انتخاب فایل الزامیست",
+      });
     }
+    if (data.file && data.file.length > 1) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["file"],
+        message: "فقط یک فایل را انتخاب کنید",
+      });
+    }
+    // validatePicture
   });
 
 // export schema type

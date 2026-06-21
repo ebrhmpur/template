@@ -7,15 +7,14 @@ import {
   type TUpdateUsersSchema,
 } from "@/lib/schemas/schema.users";
 import UiFormErrorComp from "@/components/_UI/ui-form-error-comp";
-import React from "react";
-import { resolveAppleWebApp } from "next/dist/lib/metadata/resolvers/resolve-basics";
+import React, { useEffect } from "react";
 
 const FormTestComp = ({ className }: { className?: string }) => {
-  const [files, setFiles] = React.useState<File[] | null>(null);
   const {
     register,
     handleSubmit,
-    setError,
+    watch,
+    setValue,
     clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<TUpdateUsersSchema>({
@@ -25,30 +24,73 @@ const FormTestComp = ({ className }: { className?: string }) => {
     defaultValues: {},
   });
 
+  const generateVideoThumbnail = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement("video");
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      video.src = URL.createObjectURL(file);
+      video.crossOrigin = "anonymous";
+      video.muted = true;
+      video.playsInline = true;
+
+      video.onloadedmetadata = () => {
+        video.currentTime = 1;
+      };
+
+      video.onseeked = () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const thumbnail = canvas.toDataURL("image/png");
+        URL.revokeObjectURL(video.src);
+
+        resolve(thumbnail);
+      };
+
+      video.onerror = (err) => {
+        reject(err);
+      };
+    });
+  };
+
+  const [previews, setPreviews] = React.useState<string[]>([]);
+
+  const files = watch("file");
+
+  useEffect(() => {
+    if (!files || files.length === 0) {
+      setPreviews([]);
+      return;
+    }
+
+    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    setPreviews(newPreviews);
+
+    return () => {
+      newPreviews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [files]);
+
   const onSubmit = async (data: TUpdateUsersSchema) => {
     await new Promise((resolve) => setTimeout(resolve, 3000));
     const formData = new FormData();
     console.log(data);
   };
-  const { onChange, ...fileFieldRegister } = register("file");
-  const fileInputOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e);
-    if (!e.target.files) return;
-    setFiles(Object.entries(e.target.files).map(([key, value]) => value));
-  };
+
   const deleteFileHandler = (
     e: React.MouseEvent<HTMLDivElement>,
     index: string,
   ) => {
-    e.preventDefault();
+    const currentFiles = watch("file") || [];
+    const newFiles = currentFiles.filter((_, i) => i !== Number(index));
 
-    setFiles((prev) => {
-      if (!prev) return null;
-
-      return prev.filter((_, i) => i !== Number(index));
-    });
+    setValue("file", newFiles, { shouldValidate: true });
   };
-  console.log(files);
+
   return (
     <div className={`${className} w-full`}>
       <form
@@ -59,6 +101,20 @@ const FormTestComp = ({ className }: { className?: string }) => {
         {errors.name && <UiFormErrorComp message={errors.name.message!} />}
         <input {...register("email")} placeholder={"ایمیل"} />
         {errors.email && <UiFormErrorComp message={errors.email.message!} />}
+        <input
+          type="file"
+          id={"file"}
+          multiple
+          className={"hidden"}
+          onChange={(e) => {
+            const selectedFiles = Array.from(e.target.files || []);
+            const currentFiles = watch("file") || [];
+
+            setValue("file", [...currentFiles, ...selectedFiles], {
+              shouldValidate: true,
+            });
+          }}
+        />
         <label
           htmlFor={"file"}
           className={"bg-yellow-50 text-center py-2 rounded-2xl cursor-pointer"}
@@ -66,14 +122,13 @@ const FormTestComp = ({ className }: { className?: string }) => {
           انتخاب فایل
         </label>
         {files &&
-          Object.entries(files).map(([key, value]) => (
+          Object.entries(files).map(([key, value], index) => (
             <div key={key}>
-              fafsda
               <span>{value.name}</span>
               <div className="w-1/7 relative">
                 <img
                   alt={"selected-file"}
-                  src={URL.createObjectURL(value)}
+                  src={previews[index]}
                   width={100}
                   height={100}
                 />
@@ -89,14 +144,6 @@ const FormTestComp = ({ className }: { className?: string }) => {
             </div>
           ))}
         {errors.file && <UiFormErrorComp message={errors.file.message!} />}
-        <input
-          type="file"
-          id={"file"}
-          multiple
-          {...fileFieldRegister}
-          onChange={fileInputOnChange}
-          className={"hidden"}
-        />
         <button disabled={isSubmitting}>
           {isSubmitting ? "در حال ارسال" : "ارسال"}
         </button>
