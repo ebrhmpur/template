@@ -10,11 +10,14 @@ import UiFormErrorComp from "@/components/_UI/ui-form-error-comp";
 import React, { useEffect } from "react";
 
 const FormTestComp = ({ className }: { className?: string }) => {
+  const [previews, setPreviews] = React.useState<string[]>([]);
+
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<TUpdateUsersSchema>({
@@ -36,7 +39,7 @@ const FormTestComp = ({ className }: { className?: string }) => {
       video.playsInline = true;
 
       video.onloadedmetadata = () => {
-        video.currentTime = 1;
+        video.currentTime = 3;
       };
 
       video.onseeked = () => {
@@ -57,9 +60,19 @@ const FormTestComp = ({ className }: { className?: string }) => {
     });
   };
 
-  const [previews, setPreviews] = React.useState<string[]>([]);
-
   const files = watch("file");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const res = await (await fetch("/api/test")).json();
+
+      reset({
+        name: res.data.data[0].name,
+      });
+    };
+
+    fetchUser();
+  }, [reset]);
 
   useEffect(() => {
     if (!files || files.length === 0) {
@@ -67,12 +80,22 @@ const FormTestComp = ({ className }: { className?: string }) => {
       return;
     }
 
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setPreviews(newPreviews);
+    const loadPreviews = async () => {
+      const newPreviews: string[] = [];
 
-    return () => {
-      newPreviews.forEach((url) => URL.revokeObjectURL(url));
+      for (const file of files) {
+        if (file.type.startsWith("image/")) {
+          newPreviews.push(URL.createObjectURL(file));
+        } else if (file.type.startsWith("video/")) {
+          const thumbnail = await generateVideoThumbnail(file);
+          newPreviews.push(thumbnail);
+        }
+      }
+
+      setPreviews(newPreviews);
     };
+
+    loadPreviews();
   }, [files]);
 
   const onSubmit = async (data: TUpdateUsersSchema) => {

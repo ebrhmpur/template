@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "latest",
+    "axios": "latest",
     "bcrypt": "latest",
     "dotenv": "latest",
     "drizzle-orm": "latest",
