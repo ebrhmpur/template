@@ -42,7 +42,15 @@ export const createWithoutDefaults = userSchema
   .pick({ name: true, email: true })
   .extend({ file: z.array(z.instanceof(File)).optional() })
   .superRefine((data, ctx) => {
-    // add multi-related-field / custom validation errors
+    // add custom validation errors
+    if (data.name == "") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["name"],
+        message: "نام کاربری الزامیست",
+      });
+    }
+
     if (data.name == data.email) {
       ctx.addIssue({
         code: "custom",

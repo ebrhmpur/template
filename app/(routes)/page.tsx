@@ -41,6 +41,7 @@ import UiContainerComp from "@/components/_UI/ui-container-comp";
 import { validateSchema } from "@/lib/schemas/_schema.validate";
 import { createWithoutDefaults } from "@/lib/schemas/schema.users";
 import dynamic from "next/dynamic";
+import { DBReadUserById } from "@/lib/DB/DB.users";
 
 const FormTestComp = dynamic(
   () => {
@@ -49,14 +50,13 @@ const FormTestComp = dynamic(
   { ssr: !true },
 );
 
-const Page = ({
+const Page = async ({
   params,
   searchParams,
 }: {
   params: Promise<Record<string, string>>;
   searchParams: Promise<Record<string, string>>;
 }) => {
-  const result = validateSchema(createWithoutDefaults, { name: "", email: "" });
   return (
     <main>
       <UiContainerComp>

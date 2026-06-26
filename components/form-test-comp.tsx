@@ -7,26 +7,37 @@ import {
   type TUpdateUsersSchema,
 } from "@/lib/schemas/schema.users";
 import UiFormErrorComp from "@/components/_UI/ui-form-error-comp";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { actionGetUserDetails } from "@/lib/actions/action.getUserDetails";
+import Image from "next/image";
 
 const FormTestComp = ({ className }: { className?: string }) => {
-  const [previews, setPreviews] = React.useState<string[]>([]);
+  // init states
+  //- previews
+  const [previews, setPreviews] = useState<string[]>([]);
 
+  //- loading
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // init form
   const {
     register,
     handleSubmit,
     watch,
     setValue,
     reset,
-    clearErrors,
     formState: { errors, isSubmitting },
-  } = useForm<TUpdateUsersSchema>({
+  } = useForm({
     mode: "onSubmit",
     reValidateMode: "onSubmit",
     resolver: zodResolver(createWithoutDefaults),
     defaultValues: {},
   });
 
+  // watch file input
+  const files = watch("file");
+
+  // declare generate video thumbnail function
   const generateVideoThumbnail = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const video = document.createElement("video");
@@ -60,27 +71,52 @@ const FormTestComp = ({ className }: { className?: string }) => {
     });
   };
 
-  const files = watch("file");
-
+  // set input default values from database
   useEffect(() => {
-    const fetchUser = async () => {
-      const res = await (await fetch("/api/test")).json();
-
+    (async () => {
+      const result = await actionGetUserDetails(1);
       reset({
-        name: res.data.data[0].name,
+        name: result.data.user?.[0].name,
       });
-    };
-
-    fetchUser();
+      if (result.data.user?.[0].avatarUrl) {
+        // setPreviews(
+        //   Array.from(`../storage/pictures/${result.data.user?.[0].avatarUrl}`),
+        // );
+        console.log(result.data.user?.[0].avatarUrl);
+      }
+      setLoading(false);
+    })();
   }, [reset]);
 
-  useEffect(() => {
+  // create thumbnail preview for selected files
+  // useEffect(() => {
+  //
+  //   })();
+  // }, [files]);
+
+  // declare delete file from selected files input function
+  const deleteFileHandler = (
+    e: React.MouseEvent<HTMLDivElement>,
+    index: string,
+  ) => {
+    const currentFiles = watch("file") || [];
+    const newFiles = currentFiles.filter((_, i) => i !== Number(index));
+
+    setValue("file", newFiles, { shouldValidate: true });
+  };
+
+  // declare file input onChange function
+  const fileInputOnChange = (
+    e: React.ChangeEvent<HTMLInputElement, HTMLInputElement>,
+  ) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    const currentFiles = watch("file") || [];
     if (!files || files.length === 0) {
       setPreviews([]);
       return;
     }
 
-    const loadPreviews = async () => {
+    (async () => {
       const newPreviews: string[] = [];
 
       for (const file of files) {
@@ -93,25 +129,18 @@ const FormTestComp = ({ className }: { className?: string }) => {
       }
 
       setPreviews(newPreviews);
-    };
+      console.log(previews);
+    })();
 
-    loadPreviews();
-  }, [files]);
-
-  const onSubmit = async (data: TUpdateUsersSchema) => {
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    const formData = new FormData();
-    console.log(data);
+    setValue("file", [...currentFiles, ...selectedFiles], {
+      shouldValidate: true,
+    });
   };
 
-  const deleteFileHandler = (
-    e: React.MouseEvent<HTMLDivElement>,
-    index: string,
-  ) => {
-    const currentFiles = watch("file") || [];
-    const newFiles = currentFiles.filter((_, i) => i !== Number(index));
-
-    setValue("file", newFiles, { shouldValidate: true });
+  // declare onSubmit function
+  const onSubmit = async (data: TUpdateUsersSchema) => {
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    console.log(data);
   };
 
   return (
@@ -120,23 +149,25 @@ const FormTestComp = ({ className }: { className?: string }) => {
         onSubmit={handleSubmit(onSubmit)}
         className={"flex flex-col gap-10"}
       >
-        <input {...register("name")} placeholder={"نام"} />
+        <input
+          className={`${loading && "animate-pulse"}`}
+          {...register("name")}
+          placeholder={"نام"}
+          disabled={loading}
+        />
         {errors.name && <UiFormErrorComp message={errors.name.message!} />}
-        <input {...register("email")} placeholder={"ایمیل"} />
+        <input
+          {...register("email")}
+          placeholder={"ایمیل"}
+          disabled={loading}
+        />
         {errors.email && <UiFormErrorComp message={errors.email.message!} />}
         <input
           type="file"
           id={"file"}
           multiple
           className={"hidden"}
-          onChange={(e) => {
-            const selectedFiles = Array.from(e.target.files || []);
-            const currentFiles = watch("file") || [];
-
-            setValue("file", [...currentFiles, ...selectedFiles], {
-              shouldValidate: true,
-            });
-          }}
+          onChange={fileInputOnChange}
         />
         <label
           htmlFor={"file"}
@@ -144,12 +175,12 @@ const FormTestComp = ({ className }: { className?: string }) => {
         >
           انتخاب فایل
         </label>
-        {files &&
-          Object.entries(files).map(([key, value], index) => (
+        {previews &&
+          Object.entries(previews).map(([key, value], index) => (
             <div key={key}>
-              <span>{value.name}</span>
+              {/*<span>{value.name}</span>*/}
               <div className="w-1/7 relative">
-                <img
+                <Image
                   alt={"selected-file"}
                   src={previews[index]}
                   width={100}

@@ -43,6 +43,13 @@
       "when": 1778509009408,
       "tag": "0005_typical_firelord",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782506616743,
+      "tag": "0006_giant_argent",
+      "breakpoints": true
     }
   ]
 }

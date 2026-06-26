@@ -73,7 +73,23 @@ export const DBUpdateUserById = async (
 
 // read by uniques
 export const DBReadUsers = () => {};
-export const DBReadUserById = () => {};
+export const DBReadUserById = async (
+  id: number,
+): Promise<TCtr<{ user?: typeof result }>> => {
+  const controller = createController("getUserById");
+  const result = await db
+    .select({ id: users.id, name: users.name, avatarUrl: users.avatarURL })
+    .from(users)
+    .where(eq(users.id, id))
+    .groupBy(users.id);
+  if (result.length < 1) {
+    controller.addMessage("errors", ["user was not found successfully"]);
+    return controller.get();
+  }
+  controller.addData("user", result);
+  controller.addMessage("successes", ["user read successfully"]);
+  return controller.get();
+};
 export const DBReadUserByUserName = () => {};
 export const DBReadUserByUserEmail = () => {};
 export const DBReadUserByUserPhone = () => {};
