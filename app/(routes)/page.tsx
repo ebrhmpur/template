@@ -38,10 +38,8 @@
 // };
 
 import UiContainerComp from "@/components/_UI/ui-container-comp";
-import { validateSchema } from "@/lib/schemas/_schema.validate";
-import { createWithoutDefaults } from "@/lib/schemas/schema.users";
 import dynamic from "next/dynamic";
-import { DBReadUserById } from "@/lib/DB/DB.users";
+import Image from "next/image";
 
 const FormTestComp = dynamic(
   () => {
@@ -50,7 +48,7 @@ const FormTestComp = dynamic(
   { ssr: !true },
 );
 
-const Page = async ({
+const Page = ({
   params,
   searchParams,
 }: {

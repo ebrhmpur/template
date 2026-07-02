@@ -8,24 +8,36 @@ import {
 } from "@/lib/schemas/schema.users";
 import UiFormErrorComp from "@/components/_UI/ui-form-error-comp";
 import React, { useEffect, useState } from "react";
-import { actionGetUserDetails } from "@/lib/actions/action.getUserDetails";
 import Image from "next/image";
+import { TCtr } from "@/lib/controller";
+import { TDBReadUserByIdResult } from "@/lib/DB/DB.users";
 
 const FormTestComp = ({ className }: { className?: string }) => {
   // init states
-  //- previews
-  const [previews, setPreviews] = useState<string[]>([]);
-
   //- loading
   const [loading, setLoading] = useState<boolean>(true);
+
+  //- existing files
+  const [existingFiles, setExistingFiles] = useState<
+    { id: number; url: string }[]
+  >([]);
+
+  //- new files
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+
+  //- deleted files
+  const [deletedFileIds, setDeletedFileIds] = useState<number[]>([]);
+
+  //- previews
+  const [previews, setPreviews] = useState<string[]>([]);
 
   // init form
   const {
     register,
     handleSubmit,
-    watch,
     setValue,
     reset,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm({
     mode: "onSubmit",
@@ -33,9 +45,6 @@ const FormTestComp = ({ className }: { className?: string }) => {
     resolver: zodResolver(createWithoutDefaults),
     defaultValues: {},
   });
-
-  // watch file input
-  const files = watch("file");
 
   // declare generate video thumbnail function
   const generateVideoThumbnail = (file: File): Promise<string> => {
@@ -74,25 +83,59 @@ const FormTestComp = ({ className }: { className?: string }) => {
   // set input default values from database
   useEffect(() => {
     (async () => {
-      const result = await actionGetUserDetails(1);
+      const result = (await (
+        await fetch(`/api/users/${"1"}`)
+      ).json()) as TDBReadUserByIdResult;
+      console.log(result);
       reset({
         name: result.data.user?.[0].name,
       });
+
+      // set file default value from database
       if (result.data.user?.[0].avatarUrl) {
-        // setPreviews(
-        //   Array.from(`../storage/pictures/${result.data.user?.[0].avatarUrl}`),
-        // );
-        console.log(result.data.user?.[0].avatarUrl);
+        setExistingFiles(
+          result.data.user[0].avatarUrl.map((fileUrl, index) => ({
+            id: index,
+            url: `api/files/${fileUrl}`,
+          })),
+        );
       }
       setLoading(false);
     })();
   }, [reset]);
 
-  // create thumbnail preview for selected files
-  // useEffect(() => {
-  //
-  //   })();
-  // }, [files]);
+  // create thumbnail preview for files
+  useEffect(() => {
+    if (newFiles.length < 0) {
+      setPreviews([]);
+      return;
+    }
+
+    (async () => {
+      const newPreviews = await Promise.all(
+        Object.entries(newFiles).map(async ([_, file]) => {
+          if (file.type.startsWith("image/")) {
+            return URL.createObjectURL(file);
+          }
+
+          if (file.type.startsWith("video/")) {
+            return await generateVideoThumbnail(file);
+          }
+
+          return "";
+        }),
+      );
+
+      setPreviews(newPreviews);
+    })();
+    return () => {
+      previews.forEach((preview) => {
+        if (preview.startsWith("blob:")) {
+          URL.revokeObjectURL(preview);
+        }
+      });
+    };
+  }, [newFiles]);
 
   // declare delete file from selected files input function
   const deleteFileHandler = (
@@ -109,38 +152,47 @@ const FormTestComp = ({ className }: { className?: string }) => {
   const fileInputOnChange = (
     e: React.ChangeEvent<HTMLInputElement, HTMLInputElement>,
   ) => {
-    const selectedFiles = Array.from(e.target.files || []);
-    const currentFiles = watch("file") || [];
-    if (!files || files.length === 0) {
-      setPreviews([]);
-      return;
-    }
+    const newInputFiles = e.target.files
+      ? Object.entries(e.target.files).map(([_, file]) => file)
+      : [];
 
-    (async () => {
-      const newPreviews: string[] = [];
+    setNewFiles((prev) => [...prev, ...newInputFiles]);
 
-      for (const file of files) {
-        if (file.type.startsWith("image/")) {
-          newPreviews.push(URL.createObjectURL(file));
-        } else if (file.type.startsWith("video/")) {
-          const thumbnail = await generateVideoThumbnail(file);
-          newPreviews.push(thumbnail);
-        }
-      }
-
-      setPreviews(newPreviews);
-      console.log(previews);
-    })();
-
-    setValue("file", [...currentFiles, ...selectedFiles], {
+    setValue("file", [...newFiles], {
       shouldValidate: true,
     });
   };
 
   // declare onSubmit function
   const onSubmit = async (data: TUpdateUsersSchema) => {
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    console.log(data);
+    // convert data to formData
+    const formData = new FormData();
+
+    Object.entries(data).map(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          formData.append(key, item);
+        });
+      } else if (value != null) {
+        formData.append(key, value);
+      }
+    });
+
+    // send formData to endpoint
+    const result: TCtr = await (
+      await fetch(`/api/files/test`, {
+        method: "POST",
+        body: formData,
+      })
+    ).json();
+
+    console.log(result);
+    // if ************, add error to RHF input
+    if (!result.success) {
+      setError("name", {
+        message: "نام تکراری است",
+      });
+    }
   };
 
   return (
@@ -175,17 +227,19 @@ const FormTestComp = ({ className }: { className?: string }) => {
         >
           انتخاب فایل
         </label>
-        {previews &&
-          Object.entries(previews).map(([key, value], index) => (
+        {files &&
+          Object.entries(files).map(([key, value], index) => (
             <div key={key}>
-              {/*<span>{value.name}</span>*/}
+              <span>{value.name}</span>
               <div className="w-1/7 relative">
-                <Image
-                  alt={"selected-file"}
-                  src={previews[index]}
-                  width={100}
-                  height={100}
-                />
+                {previews[index] && (
+                  <Image
+                    alt={"selected-file"}
+                    src={previews[index]}
+                    width={100}
+                    height={100}
+                  />
+                )}
                 <div
                   onClick={(e) => deleteFileHandler(e, key)}
                   className={

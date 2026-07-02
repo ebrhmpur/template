@@ -1,5 +1,5 @@
 import "./globals.css";
-import React, { Suspense } from "react";
+import React from "react";
 import { z } from "zod";
 import { errorMap } from "@/lib/schemas/_schema.errorMap";
 import localFont from "next/font/local";
@@ -51,9 +51,7 @@ export default function RootLayout({
   return (
     <html lang="en" dir={`rtl`}>
       <body className={`/*font_name.className*/ font-font_name antialiased`}>
-        <ZodCustomErrorMapComp>
-        <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
-        </ZodCustomErrorMapComp>
+        <ZodCustomErrorMapComp>{children}</ZodCustomErrorMapComp>
       </body>
     </html>
   );

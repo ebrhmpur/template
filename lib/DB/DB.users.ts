@@ -96,3 +96,6 @@ export const DBReadUserByUserPhone = () => {};
 
 // delete by id
 export const DBDeleteUserById = () => {};
+
+// export types
+export type TDBReadUserByIdResult = Awaited<ReturnType<typeof DBReadUserById>>;

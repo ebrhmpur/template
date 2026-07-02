@@ -13,10 +13,12 @@
   },
   "dependencies": {
     "@hookform/resolvers": "latest",
+    "axios": "latest",
     "bcrypt": "latest",
     "dotenv": "latest",
     "drizzle-orm": "latest",
     "drizzle-zod": "latest",
+    "mime": "latest",
     "next": "latest",
     "postgres": "latest",
     "prettier": "latest",
